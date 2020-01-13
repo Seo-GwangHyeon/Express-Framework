@@ -1,3 +1,25 @@
+const express = require('express') // 모듈을 불러온다.
+const app = express()  //application을 얻는 방법
+const port = 3000
+
+// get은 rounte, routing =>  어떤 길을 따라서 갈림길에서 적당한 곳으로 방향을 잡는 것, 즉 사용자들이 
+//여러 경로를 통해서 들오면 적절히 바꿔 주는 것
+//app.get('/', (req, res) => res.send('Hello World!'))//  
+app.get('/', function(req, res) {
+  return res.send('Hello World!')
+});
+
+app.get('/page', function(req, res) {
+  return res.send('/page')
+});
+
+// 3000포트에 리스팅 한다.
+// app.listen이랑 동일한 역할을 한다.
+//app.listen(port, () => console.log(`Example app listening on port ${port}!`))
+app.listen(port, function() {
+  console.log(`Example app listening on port ${port}!`)
+})
+/*
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
@@ -141,3 +163,4 @@ var app = http.createServer(function(request,response){
     }
 });
 app.listen(3000);
+*/
