@@ -1,12 +1,23 @@
-const express = require('express') // 모듈을 불러온다.
-const app = express()  //application을 얻는 방법
-const port = 3000
+const express = require('express'); // 모듈을 불러온다.
+const app = express();  //application을 얻는 방법
+const port = 3000;
+var fs = require('fs');
+var template = require('./lib/template.js');
 
 // get은 rounte, routing =>  어떤 길을 따라서 갈림길에서 적당한 곳으로 방향을 잡는 것, 즉 사용자들이 
 //여러 경로를 통해서 들오면 적절히 바꿔 주는 것
 //app.get('/', (req, res) => res.send('Hello World!'))//  
-app.get('/', function(req, res) {
-  return res.send('Hello World!')
+app.get('/', function(request, response) {
+  fs.readdir('./data', function(error, filelist){
+    var title = 'Welcome';
+    var description = 'Hello, Node.js';
+    var list = template.list(filelist);
+    var html = template.HTML(title, list,
+      `<h2>${title}</h2>${description}`,
+      `<a href="/create">create</a>`
+    );
+    response.send(html);
+  });
 });
 
 app.get('/page', function(req, res) {
