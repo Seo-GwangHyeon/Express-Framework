@@ -5,7 +5,7 @@ var fs = require('fs');
 var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
-
+var qs = require('querystring');
 // get은 rounte, routing =>  어떤 길을 따라서 갈림길에서 적당한 곳으로 방향을 잡는 것, 즉 사용자들이 
 //여러 경로를 통해서 들오면 적절히 바꿔 주는 것
 //app.get('/', (req, res) => res.send('Hello World!'))//  
@@ -47,6 +47,43 @@ app.get('/page/:pageId', function(request, response) {
   });
 });
 
+app.get('/create', function(request, response) {
+  fs.readdir('./data', function(error, filelist){
+    var title = ' create';
+    var list = template.list(filelist);
+    var html = template.HTML(title, list, `
+      <form action="/create_process" method="post">
+        <p><input type="text" name="title" placeholder="title"></p>
+        <p>
+          <textarea name="description" placeholder="description"></textarea>
+        </p>
+        <p>
+          <input type="submit">
+        </p>
+      </form>
+    `, '');
+    response.send(html);
+  });
+});
+// 포스트 방식이ㄹ면 이렇게 동작 
+app.post('/create_process', function(request, response) {
+  var body = '';
+  console.log(body);
+  request.on('data', function(data){
+      body = body + data;
+      
+  });
+  request.on('end', function(){
+      var post = qs.parse(body);
+      var title = post.title;
+      console.log(post.title);
+      var description = post.description;
+      fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+        response.writeHead(302, {Location: `/page/${title}`});
+        response.end();
+      })
+  });
+});
 //2개 이상 parameter 주는 경우
 /*
 app.get('/page/:pageId/:chapterid', function(request, res) {
@@ -66,7 +103,7 @@ app.listen(port, function() {
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
-var qs = require('querystring');
+
 var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
@@ -78,61 +115,11 @@ var app = http.createServer(function(request,response){
     if(pathname === '/'){
       if(queryData.id === undefined){
       } else {
-        fs.readdir('./data', function(error, filelist){
-          var filteredId = path.parse(queryData.id).base;
-          fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-            var title = queryData.id;
-            var sanitizedTitle = sanitizeHtml(title);
-            var sanitizedDescription = sanitizeHtml(description, {
-              allowedTags:['h1']
-            });
-            var list = template.list(filelist);
-            var html = template.HTML(sanitizedTitle, list,
-              `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-              ` <a href="/create">create</a>
-                <a href="/update?id=${sanitizedTitle}">update</a>
-                <form action="delete_process" method="post">
-                  <input type="hidden" name="id" value="${sanitizedTitle}">
-                  <input type="submit" value="delete">
-                </form>`
-            );
-            response.writeHead(200);
-            response.end(html);
-          });
-        });
-      }
+     
     } else if(pathname === '/create'){
-      fs.readdir('./data', function(error, filelist){
-        var title = 'WEB - create';
-        var list = template.list(filelist);
-        var html = template.HTML(title, list, `
-          <form action="/create_process" method="post">
-            <p><input type="text" name="title" placeholder="title"></p>
-            <p>
-              <textarea name="description" placeholder="description"></textarea>
-            </p>
-            <p>
-              <input type="submit">
-            </p>
-          </form>
-        `, '');
-        response.writeHead(200);
-        response.end(html);
-      });
+      
     } else if(pathname === '/create_process'){
-      var body = '';
-      request.on('data', function(data){
-          body = body + data;
-      });
-      request.on('end', function(){
-          var post = qs.parse(body);
-          var title = post.title;
-          var description = post.description;
-          fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-            response.writeHead(302, {Location: `/?id=${title}`});
-            response.end();
-          })
-      });
+      
     } else if(pathname === '/update'){
       fs.readdir('./data', function(error, filelist){
         var filteredId = path.parse(queryData.id).base;
