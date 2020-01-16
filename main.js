@@ -6,6 +6,12 @@ var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
 var qs = require('querystring');
+var bodyParser = require('body-parser');
+
+// 해당 코드가 실행 되면 미들웨어가 실행된다.
+app.use(bodyParser.urlencoded({extended:false}));
+
+
 // get은 rounte, routing =>  어떤 길을 따라서 갈림길에서 적당한 곳으로 방향을 잡는 것, 즉 사용자들이 
 //여러 경로를 통해서 들오면 적절히 바꿔 주는 것
 //app.get('/', (req, res) => res.send('Hello World!'))//  
@@ -66,22 +72,14 @@ app.get('/create', function(request, response) {
   });
 });
 // 포스트 방식이ㄹ면 이렇게 동작 
-app.post('/create_process', function(request, response) {
-  var body = '';
-  console.log(body);
-  request.on('data', function(data){
-      body = body + data;
-      
-  });
-  request.on('end', function(){
-      var post = qs.parse(body);
-      var title = post.title;
-      console.log(post.title);
-      var description = post.description;
-      fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-        response.redirect(`/page/${title}`);
-      })
-  });
+app.post('/create_process', function(request, response) {  
+  var post = request.body;  //body-parser를 사용해서 새로 생긴 property
+  var title = post.title;
+  console.log(post.title);
+  var description = post.description;
+  fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+    response.redirect(`/page/${title}`);
+  })
 });
 //프래틱 URL, Clean URL
 app.get('/update/:pageId', function(request, response) {
@@ -112,36 +110,24 @@ app.get('/update/:pageId', function(request, response) {
 
 // 포스트 방식이ㄹ면 이렇게 동작 
 app.post('/update_process', function(request, response) {
-  var body = '';
-      request.on('data', function(data){
-          body = body + data;
-      });
-      request.on('end', function(){
-          var post = qs.parse(body);
-          var id = post.id;
-          var title = post.title;
-          var description = post.description;
-          fs.rename(`data/${id}`, `data/${title}`, function(error){
-            fs.writeFile(`data/${title}`, description, 'utf8', function(err){
-              response.redirect( `/page/${title}`);
-            })
-          });
-      });
+  var post = request.body;
+  var id = post.id;
+  var title = post.title;
+  var description = post.description;
+  fs.rename(`data/${id}`, `data/${title}`, function(error){
+    fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+      response.redirect( `/page/${title}`);
+    })
+});
 });
 
 app.post('/delete_process',function(request,response){
-  var body = '';
-  request.on('data', function(data){
-      body = body + data;
-  });
-  request.on('end', function(){
-      var post = qs.parse(body);
-      var id = post.id;
-      var filteredId = path.parse(id).base;
-      fs.unlink(`data/${filteredId}`, function(error){
-        response.redirect(`/`);
-      })
-  });
+  var post = request.body;
+  var id = post.id;
+  var filteredId = path.parse(id).base;
+  fs.unlink(`data/${filteredId}`, function(error){
+    response.redirect(`/`);
+  })
 });
 
 
@@ -160,7 +146,10 @@ app.get('/page/:pageId/:chapterid', function(request, res) {
 app.listen(port, function() {
   console.log(`Example app listening on port ${port}!`)
 })
+
+
 /*
+
 var http = require('http');
 var fs = require('fs');
 var url = require('url');
@@ -176,8 +165,9 @@ var app = http.createServer(function(request,response){
     if(pathname === '/'){
       if(queryData.id === undefined){
       } else {
-     
-    } else if(pathname === '/create'){
+      } 
+    }
+     else if(pathname === '/create'){
       
     } else if(pathname === '/create_process'){
       
