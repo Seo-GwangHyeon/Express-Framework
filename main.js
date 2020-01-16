@@ -8,9 +8,10 @@ var sanitizeHtml = require('sanitize-html');
 var qs = require('querystring');
 var bodyParser = require('body-parser');
 
+var compression = require('compression');
 // 해당 코드가 실행 되면 미들웨어가 실행된다.
 app.use(bodyParser.urlencoded({extended:false}));
-
+app.use(compression());
 
 // get은 rounte, routing =>  어떤 길을 따라서 갈림길에서 적당한 곳으로 방향을 잡는 것, 즉 사용자들이 
 //여러 경로를 통해서 들오면 적절히 바꿔 주는 것
