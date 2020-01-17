@@ -13,64 +13,72 @@ var compression = require('compression');
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(compression());
 
+// 미들웨어는 함수이다.
+// 함수는 첫번째 매개변수는  request 객체 인자로
+// 두번째 매개변수는  reponse 객체 인자로
+// get방식의 요청만 파일 목록을 가져온다.
+// 라우팅이 사실 미들웨어였다... 모든게 미들웨어이다 
+app.get('*', function (request, reponse, next){
+  fs.readdir('./data', function(error, filelist){
+    request.flist =filelist;
+    next();// next에는 다음에 호출될 미들웨어가 담겨있다.
+  });
+});
+
 // get은 rounte, routing =>  어떤 길을 따라서 갈림길에서 적당한 곳으로 방향을 잡는 것, 즉 사용자들이 
 //여러 경로를 통해서 들오면 적절히 바꿔 주는 것
 //app.get('/', (req, res) => res.send('Hello World!'))//  
 app.get('/', function(request, response) {
-  fs.readdir('./data', function(error, filelist){
     var title = 'Welcome';
     var description = 'Hello, Node.js';
-    var list = template.list(filelist);
+    var list = template.list(request.flist);
     var html = template.HTML(title, list,
       `<h2>${title}</h2>${description}`,
       `<a href="/create">create</a>`
     );
     response.send(html);
-  });
 });
 // 사용자가 주는 어떤 값에다가 pageId를 할당한다.
 // url path 방식으로 parameter를 전달하는 것을 처리하는 라우팅 기법을 배움
 app.get('/page/:pageId', function(request, response) {
-  fs.readdir('./data', function(error, filelist){
-    var filteredId = path.parse(request.params.pageId).base;
-    fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-      var title = request.params.pageId;
-      var sanitizedTitle = sanitizeHtml(title);
-      var sanitizedDescription = sanitizeHtml(description, {
-        allowedTags:['h1']
-      });
-      var list = template.list(filelist);
-      var html = template.HTML(sanitizedTitle, list,
-        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-        ` <a href="/create">create</a>
-          <a href="/update/${sanitizedTitle}">update</a>
-          <form action="/delete_process" method="post">
-            <input type="hidden" name="id" value="${sanitizedTitle}">
-            <input type="submit" value="delete">
-          </form>`
-      );
-      response.send(html);
+  console.log(request.list)
+  var filteredId = path.parse(request.params.pageId).base;
+  fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
+    var title = request.params.pageId;
+    var sanitizedTitle = sanitizeHtml(title);
+    var sanitizedDescription = sanitizeHtml(description, {
+      allowedTags:['h1']
     });
+    var list = template.list(request.flist);
+    var html = template.HTML(sanitizedTitle, list,
+      `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+      ` <a href="/create">create</a>
+        <a href="/update/${sanitizedTitle}">update</a>
+        <form action="/delete_process" method="post">
+          <input type="hidden" name="id" value="${sanitizedTitle}">
+          <input type="submit" value="delete">
+        </form>`
+    );
+    response.send(html);
   });
+  
 });
 
 app.get('/create', function(request, response) {
-  fs.readdir('./data', function(error, filelist){
-    var title = ' create';
-    var list = template.list(filelist);
-    var html = template.HTML(title, list, `
-      <form action="/create_process" method="post">
-        <p><input type="text" name="title" placeholder="title"></p>
-        <p>
-          <textarea name="description" placeholder="description"></textarea>
-        </p>
-        <p>
-          <input type="submit">
-        </p>
-      </form>
-    `, '');
-    response.send(html);
-  });
+  var title = ' create';
+  var list = template.list(request.flist);
+  var html = template.HTML(title, list, `
+    <form action="/create_process" method="post">
+      <p><input type="text" name="title" placeholder="title"></p>
+      <p>
+        <textarea name="description" placeholder="description"></textarea>
+      </p>
+      <p>
+        <input type="submit">
+      </p>
+    </form>
+  `, '');
+  response.send(html);
 });
 // 포스트 방식이ㄹ면 이렇게 동작 
 app.post('/create_process', function(request, response) {  
@@ -84,29 +92,29 @@ app.post('/create_process', function(request, response) {
 });
 //프래틱 URL, Clean URL
 app.get('/update/:pageId', function(request, response) {
-  fs.readdir('./data', function(error, filelist){
-    var filteredId = path.parse(request.params.pageId).base;
-    fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-      var title =request.params.pageId;
-      var list = template.list(filelist);
-      var html = template.HTML(title, list,
-        `
-        <form action="/update_process" method="post">
-          <input type="hidden" name="id" value="${title}">
-          <p><input type="text" name="title" placeholder="title" value="${title}"></p>
-          <p>
-            <textarea name="description" placeholder="description">${description}</textarea>
-          </p>
-          <p>
-            <input type="submit">
-          </p>
-        </form>
-        `,
-        `<a href="/create">create</a> <a href="/update/${title}">update</a>`
-      );
-      response.send(html);
-    });
+  
+  var filteredId = path.parse(request.params.pageId).base;
+  fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
+    var title =request.params.pageId;
+    var list = template.list(request.flist);
+    var html = template.HTML(title, list,
+      `
+      <form action="/update_process" method="post">
+        <input type="hidden" name="id" value="${title}">
+        <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+        <p>
+          <textarea name="description" placeholder="description">${description}</textarea>
+        </p>
+        <p>
+          <input type="submit">
+        </p>
+      </form>
+      `,
+      `<a href="/create">create</a> <a href="/update/${title}">update</a>`
+    );
+    response.send(html);
   });
+
 });
 
 // 포스트 방식이ㄹ면 이렇게 동작 
