@@ -10,6 +10,9 @@ var bodyParser = require('body-parser');
 
 var compression = require('compression');
 // 해당 코드가 실행 되면 미들웨어가 실행된다.
+
+app.use(express.static('public'));// 정적인 파일을 직접지정해준다. 지정하지 않은 부분은 접근할 수 없다. 
+// express 내장 static 파일을 불러오는 미들웨어
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(compression());
 
@@ -33,8 +36,12 @@ app.get('/', function(request, response) {
     var description = 'Hello, Node.js';
     var list = template.list(request.flist);
     var html = template.HTML(title, list,
-      `<h2>${title}</h2>${description}`,
+      `<h2>${title}</h2>${description}
+      <img src="/img/kakao.jpg" style="width:100px;  display:block; margin-top:10px;" >
+      `
+      ,
       `<a href="/create">create</a>`
+
     );
     response.send(html);
 });
