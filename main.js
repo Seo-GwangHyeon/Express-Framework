@@ -47,26 +47,34 @@ app.get('/', function(request, response) {
 });
 // 사용자가 주는 어떤 값에다가 pageId를 할당한다.
 // url path 방식으로 parameter를 전달하는 것을 처리하는 라우팅 기법을 배움
-app.get('/page/:pageId', function(request, response) {
+app.get('/page/:pageId', function(request, response,next) {
   console.log(request.list)
   var filteredId = path.parse(request.params.pageId).base;
   fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-    var title = request.params.pageId;
-    var sanitizedTitle = sanitizeHtml(title);
-    var sanitizedDescription = sanitizeHtml(description, {
-      allowedTags:['h1']
-    });
-    var list = template.list(request.flist);
-    var html = template.HTML(sanitizedTitle, list,
-      `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
-      ` <a href="/create">create</a>
-        <a href="/update/${sanitizedTitle}">update</a>
-        <form action="/delete_process" method="post">
-          <input type="hidden" name="id" value="${sanitizedTitle}">
-          <input type="submit" value="delete">
-        </form>`
-    );
-    response.send(html);
+    if(err)
+    {
+      next(err);// 해당 파일이 없을시  다음 미들웨어로 넘긴다. 그래서 404 페이지로 간다.
+    }
+    else{
+      var title = request.params.pageId;
+      var sanitizedTitle = sanitizeHtml(title);
+      var sanitizedDescription = sanitizeHtml(description, {
+        allowedTags:['h1']
+      });
+      var list = template.list(request.flist);
+      var html = template.HTML(sanitizedTitle, list,
+        `<h2>${sanitizedTitle}</h2>${sanitizedDescription}`,
+        ` <a href="/create">create</a>
+          <a href="/update/${sanitizedTitle}">update</a>
+          <form action="/delete_process" method="post">
+            <input type="hidden" name="id" value="${sanitizedTitle}">
+            <input type="submit" value="delete">
+          </form>`
+      );
+      response.send(html);
+      
+    }
+    
   });
   
 });
@@ -99,29 +107,33 @@ app.post('/create_process', function(request, response) {
 });
 //프래틱 URL, Clean URL
 app.get('/update/:pageId', function(request, response) {
-  
-  var filteredId = path.parse(request.params.pageId).base;
-  fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-    var title =request.params.pageId;
-    var list = template.list(request.flist);
-    var html = template.HTML(title, list,
-      `
-      <form action="/update_process" method="post">
-        <input type="hidden" name="id" value="${title}">
-        <p><input type="text" name="title" placeholder="title" value="${title}"></p>
-        <p>
-          <textarea name="description" placeholder="description">${description}</textarea>
-        </p>
-        <p>
-          <input type="submit">
-        </p>
-      </form>
-      `,
-      `<a href="/create">create</a> <a href="/update/${title}">update</a>`
-    );
-    response.send(html);
-  });
-
+  if(err)
+    {
+      next(err);// 해당 파일이 없을시  다음 미들웨어로 넘긴다. 그래서 404 페이지로 간다.
+    }
+    else{
+      var filteredId = path.parse(request.params.pageId).base;
+      fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
+        var title =request.params.pageId;
+        var list = template.list(request.flist);
+        var html = template.HTML(title, list,
+          `
+          <form action="/update_process" method="post">
+            <input type="hidden" name="id" value="${title}">
+            <p><input type="text" name="title" placeholder="title" value="${title}"></p>
+            <p>
+              <textarea name="description" placeholder="description">${description}</textarea>
+            </p>
+            <p>
+              <input type="submit">
+            </p>
+          </form>
+          `,
+          `<a href="/create">create</a> <a href="/update/${title}">update</a>`
+        );
+        response.send(html);
+      });
+    }
 });
 
 // 포스트 방식이ㄹ면 이렇게 동작 
@@ -155,12 +167,25 @@ app.get('/page/:pageId/:chapterid', function(request, res) {
 });
 */
 
+//맨 마지막에 미들웨어를 추가한다.
+//다른 곳에 라우팅 되다가 여기까지 라우팅이 안되면 없는 페이지로 처리한다.
+app.use(function(req, res, next)
+{
+  res.status(404).send('Sorry cannot find that ! ');
+});
+
+//에러 발생 시 next의 인자로 err를 준 경우 다른 것들 다무시하고 여기로 빠지게 된다.
+app.use(function(err, req,  res, next)
+{
+  console.error(err.stack)
+  res.status(500).send('Something broke!');
+});
 
 // 3000포트에 리스팅 한다.
 // app.listen이랑 동일한 역할을 한다.
 //app.listen(port, () => console.log(`Example app listening on port ${port}!`))
 app.listen(port, function() {
-  console.log(`Example app listening on port ${port}!`)
+  console.log(`404 : Example app listening on port ${port}!`)
 })
 
 
