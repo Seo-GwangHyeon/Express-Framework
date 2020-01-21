@@ -3,11 +3,14 @@
 const express = require('express'); // 모듈을 불러온다.
 const app = express();  //application을 얻는 방법
 const port = 3000;
-var fs = require('fs');
+var fs = require('fs'); 
 var bodyParser = require('body-parser');
 var compression = require('compression');
 var topicRouter = require('./routes/topic');
 var indexRouter = require('./routes/index');
+// 기본적인 보안 문제들을 해결해주는 미들웨어
+var helmet =require('helmet');
+app.use(helmet()); 
 
 // 해당 코드가 실행 되면 미들웨어가 실행된다.
 app.use(express.static('public'));// 정적인 파일을 직접지정해준다. 지정하지 않은 부분은 접근할 수 없다. 
