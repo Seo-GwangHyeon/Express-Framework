@@ -24,6 +24,7 @@
     "compression": "^1.7.4",
     "express": "^4.17.1",
     "helmet": "^3.21.2",
+    "mongodb": "^3.5.2",
     "pm2": "^4.2.1",
     "sanitize-html": "^1.18.2"
   }
